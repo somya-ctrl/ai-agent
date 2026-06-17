@@ -18,8 +18,8 @@ const PrivateRoute = ({ children, industry }) => {
     return <Navigate to="/login" replace />
   }
 
-  // Block access if user's industry doesn't match the route's industry
-  if (industry && user.industry !== industry) {
+  // Admin can access any dashboard; others are restricted to their own industry
+  if (industry && user.industry !== industry && user.industry !== 'admin') {
     return <Navigate to="/login" replace />
   }
 

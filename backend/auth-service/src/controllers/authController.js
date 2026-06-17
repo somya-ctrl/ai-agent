@@ -4,20 +4,16 @@ import { findByEmail } from '../models/User.js'
 
 export const login = async (c) => {
   try {
-    const { email, password, industry } = await c.req.json()
+    const { email, password } = await c.req.json()
 
-    if (!email || !password || !industry) {
-      return c.json({ message: 'email, password and industry are required' }, 400)
+    if (!email || !password) {
+      return c.json({ message: 'email and password are required' }, 400)
     }
 
     const user = await findByEmail(c.env.DB, email.toLowerCase().trim())
 
     if (!user) {
       return c.json({ message: 'Invalid credentials' }, 401)
-    }
-
-    if (user.industry !== industry) {
-      return c.json({ message: `Account is not registered for the ${industry} industry` }, 403)
     }
 
     const passwordMatch = await bcrypt.compare(password, user.password_hash)

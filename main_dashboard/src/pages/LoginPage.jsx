@@ -2,32 +2,20 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
-const industries = [
-  { id: 'restaurant', name: 'Restaurant', desc: 'Bookings, orders & voice agent' },
-  { id: 'insurance', name: 'Insurance', desc: 'Claims, policies & client calls' },
+const INDUSTRIES = [
+  { id: 'restaurant', label: 'Restaurant', desc: 'Bookings, orders & voice agent', icon: '🍽️' },
+  { id: 'insurance', label: 'Insurance', desc: 'Claims, policies & client calls', icon: '🛡️' },
 ]
-
-function CheckboxIcon({ className = '' }) {
-  return (
-    <div className={`w-4 h-4 border-2 border-current rounded-sm flex-shrink-0 ${className}`} />
-  )
-}
 
 function LoginPage() {
   const navigate = useNavigate()
   const { login } = useAuth()
-  const [selectedIndustry, setSelectedIndustry] = useState('restaurant')
+  const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-
-  const selected = industries.find((i) => i.id === selectedIndustry)
-
-  const handleChange = () => {
-    setSelectedIndustry((prev) => (prev === 'restaurant' ? 'insurance' : 'restaurant'))
-    setError('')
-  }
+  const [showIndustryPicker, setShowIndustryPicker] = useState(false)
 
   const handleLogin = async (e) => {
     e.preventDefault()
@@ -38,7 +26,7 @@ function LoginPage() {
       const res = await fetch('https://agentai-auth-service.agarwalsomya224.workers.dev/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, industry: selectedIndustry }),
+        body: JSON.stringify({ email, password }),
       })
 
       const data = await res.json()
@@ -49,167 +37,175 @@ function LoginPage() {
       }
 
       login(data.token, data.user)
-      navigate(`/dashboard/${selectedIndustry}`)
+
+      if (data.user.industry === 'admin') {
+        setShowIndustryPicker(true)
+      } else if (data.user.industry === 'restaurant') {
+        navigate('/dashboard/restaurant')
+      } else if (data.user.industry === 'insurance') {
+        navigate('/dashboard/insurance')
+      }
     } catch {
-      setError('Cannot connect to server. Make sure the backend is running.')
+      setError('Cannot connect to server. Please try again.')
     } finally {
       setLoading(false)
     }
   }
 
-  return (
-    <div className="min-h-screen flex">
-
-      {/* ── Left Panel ── */}
-      <div className="w-1/2 bg-blue-700 flex flex-col p-10 min-h-screen">
-
-        {/* Brand */}
-        <div className="flex items-center gap-2 text-white font-semibold text-lg">
-          <CheckboxIcon className="border-white" />
-          <span>AgentAI</span>
-        </div>
-
-        {/* Heading */}
-        <div className="flex-1 flex flex-col justify-center py-10">
-          <h1 className="text-3xl font-bold text-white leading-snug mb-4">
-            Your AI agent is ready to<br />take calls
-          </h1>
-          <p className="text-blue-200 text-sm leading-relaxed mb-10">
-            Select your industry to load the right dashboard and configuration after login.
-          </p>
-
-          {/* Industry Cards */}
-          <div className="flex flex-col gap-3">
-            {industries.map((ind) => (
+  if (showIndustryPicker) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-8">
+            <div className="text-3xl mb-3">👋</div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-1">Welcome, Admin</h2>
+            <p className="text-gray-500 text-sm">Choose which dashboard to open</p>
+          </div>
+          <div className="flex flex-col gap-4">
+            {INDUSTRIES.map((ind) => (
               <button
                 key={ind.id}
-                onClick={() => setSelectedIndustry(ind.id)}
-                className={`flex items-center justify-between rounded-xl px-5 py-4 text-left transition-colors duration-200 ${
-                  selectedIndustry === ind.id
-                    ? 'bg-blue-500'
-                    : 'bg-blue-900 hover:bg-blue-800'
-                }`}
+                onClick={() => navigate(`/dashboard/${ind.id}`)}
+                className="flex items-center gap-4 p-5 border-2 border-gray-100 hover:border-blue-500 rounded-2xl text-left transition-all duration-200 group"
               >
-                <div className="flex items-center gap-3">
-                  <CheckboxIcon className="border-blue-300" />
-                  <div>
-                    <p className="text-white font-bold text-sm">{ind.name}</p>
-                    <p className="text-blue-200 text-xs mt-0.5">{ind.desc}</p>
-                  </div>
+                <span className="text-3xl">{ind.icon}</span>
+                <div>
+                  <p className="font-bold text-gray-900 group-hover:text-blue-700">{ind.label}</p>
+                  <p className="text-sm text-gray-400">{ind.desc}</p>
                 </div>
-                <CheckboxIcon className="border-blue-300" />
+                <span className="ml-auto text-gray-300 group-hover:text-blue-500 text-xl">→</span>
               </button>
             ))}
           </div>
         </div>
-
-        {/* Footer */}
-        <p className="text-blue-400 text-xs">Powered by Twilio · VAPI · SIP</p>
       </div>
+    )
+  }
 
-      {/* ── Right Panel ── */}
-      <div className="w-1/2 flex flex-col justify-center px-16 py-12 bg-white">
+  return (
+    <div className="min-h-screen bg-white flex items-center justify-center p-3 sm:p-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 w-full max-w-5xl border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
 
-        <h2 className="text-4xl font-bold text-gray-900 mb-2">Welcome back</h2>
-        <p className="text-gray-400 text-sm mb-8">Login to access your AI agent dashboard.</p>
+        {/* Left Panel - Brand (Blue) */}
+        <div className="bg-blue-900 p-6 sm:p-8 lg:p-10 flex flex-col justify-between gap-8 lg:gap-0">
+          <div>
+            <div className="flex items-center gap-2 text-blue-50 text-base sm:text-lg font-semibold mb-4 sm:mb-6">
+              <span>🤖</span>
+              <span>AgentAI</span>
+            </div>
 
-        {/* Industry badge */}
-        <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mb-7">
-          <div className="flex items-center gap-3">
-            <CheckboxIcon className="border-gray-400" />
-            <span className="text-gray-800 font-semibold text-sm">{selected.name} dashboard</span>
+            <span className="inline-block bg-white/10 border border-white/25 text-blue-200 text-xs px-4 py-1.5 rounded-full mb-4 sm:mb-6">
+              AI-powered voice & messaging agents
+            </span>
+
+            <h2 className="text-xl sm:text-2xl font-bold text-blue-50 mb-3 leading-snug">
+              Automate customer conversations across every industry
+            </h2>
+            <p className="text-blue-200 text-sm leading-relaxed mb-6 lg:mb-8">
+              Deploy intelligent AI agents for inbound calls, WhatsApp, and bookings — without changing your existing phone number.
+            </p>
           </div>
-          <button
-            type="button"
-            onClick={handleChange}
-            className="text-blue-600 text-sm font-medium hover:underline"
-          >
-            Change
-          </button>
+
+          {/* Feature list - hidden on very small screens to reduce scroll before form */}
+          <div className="hidden sm:block">
+            {[
+              { icon: '📞', text: 'Voice agent on your existing SIP number' },
+              { icon: '💬', text: '24/7 WhatsApp automation' },
+              { icon: '📊', text: 'Live dashboard for bookings & calls' },
+              { icon: '🔒', text: 'JWT secured, role-based access' },
+            ].map((f) => (
+              <div key={f.text} className="flex items-center gap-3 py-2.5 lg:py-3 border-t border-white/15">
+                <span className="text-base">{f.icon}</span>
+                <span className="text-sm text-blue-50">{f.text}</span>
+              </div>
+            ))}
+          </div>
+
+          <p className="text-xs text-blue-300">© 2026 AgentAI. All rights reserved.</p>
         </div>
 
-        <form onSubmit={handleLogin} className="flex flex-col gap-5">
-
-          {/* Email */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Email address
-            </label>
-            <div className="relative">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@company.com"
-                required
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <CheckboxIcon className="border-gray-300 absolute right-3 top-1/2 -translate-y-1/2" />
-            </div>
-          </div>
-
-          {/* Password */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Password
-            </label>
-            <div className="relative">
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <CheckboxIcon className="border-gray-300 absolute right-3 top-1/2 -translate-y-1/2" />
-            </div>
-          </div>
-
-          {/* Forgot password */}
-          <div className="text-right -mt-2">
-            <a href="#" className="text-blue-600 text-sm hover:underline">
-              Forgot password?
-            </a>
-          </div>
-
-          {/* Error message */}
-          {error && (
-            <p className="text-red-500 text-xs text-center -mt-1">{error}</p>
-          )}
-
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-gray-900 hover:bg-gray-800 disabled:bg-gray-400 text-white font-semibold py-4 rounded-xl text-sm transition-colors duration-200"
-          >
-            {loading ? 'Logging in...' : 'Login to dashboard →'}
-          </button>
-        </form>
-
-        {/* JWT divider */}
-        <div className="flex items-center gap-3 my-6">
-          <div className="flex-1 h-px bg-gray-200" />
-          <span className="text-gray-400 text-xs font-medium">JWT secured</span>
-          <div className="flex-1 h-px bg-gray-200" />
-        </div>
-
-        {/* JWT note */}
-        <div className="flex items-start gap-2.5 mb-6">
-          <CheckboxIcon className="border-gray-300 mt-0.5" />
-          <p className="text-gray-400 text-xs leading-relaxed">
-            Tokens validated via API gateway on every request
+        {/* Right Panel - Login Form */}
+        <div className="bg-white p-6 sm:p-8 lg:p-10 flex flex-col justify-center">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Welcome back</h1>
+          <p className="text-sm text-gray-500 mb-6 lg:mb-8 leading-relaxed">
+            Login with your credentials. You'll be redirected to your dashboard automatically based on your role.
           </p>
-        </div>
 
-        {/* Sign up */}
-        <p className="text-gray-400 text-sm text-center">
-          Don&apos;t have an account?{' '}
-          <a href="#" className="text-blue-600 hover:underline font-medium">
-            Contact your admin
-          </a>
-        </p>
+          <form onSubmit={handleLogin}>
+            <div className="mb-4">
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                Email address
+              </label>
+              <div className="relative">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@company.com"
+                  required
+                  className="w-full h-11 border border-gray-200 rounded-lg px-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-colors"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-base">
+                  ✉️
+                </span>
+              </div>
+            </div>
+
+            <div className="mb-2">
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  className="w-full h-11 border border-gray-200 rounded-lg px-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-colors"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"
+                >
+                  {showPassword ? '🙈' : '👁️'}
+                </button>
+              </div>
+            </div>
+
+            <div className="text-right mb-6">
+              <a href="#" className="text-xs text-gray-500 hover:text-blue-700 transition-colors">
+                Forgot password?
+              </a>
+            </div>
+
+            {error && (
+              <p className="text-red-500 text-xs mb-3 text-center">{error}</p>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full h-11 bg-blue-700 hover:bg-blue-800 disabled:bg-blue-400 text-white font-semibold text-sm rounded-lg transition-colors duration-200"
+            >
+              {loading ? 'Logging in...' : 'Login →'}
+            </button>
+          </form>
+
+          <div className="flex items-center gap-3 my-6">
+            <div className="flex-1 h-px bg-gray-100" />
+            <span className="text-xs text-gray-400">Role-based access</span>
+            <div className="flex-1 h-px bg-gray-100" />
+          </div>
+
+          <div className="flex items-start gap-2 bg-blue-50 rounded-lg p-3">
+            <span className="text-sm mt-0.5">ℹ️</span>
+            <p className="text-xs text-blue-900 leading-relaxed">
+              Restaurant and insurance accounts go straight to their dashboard. Admin accounts can view any dashboard.
+            </p>
+          </div>
+        </div>
 
       </div>
     </div>
