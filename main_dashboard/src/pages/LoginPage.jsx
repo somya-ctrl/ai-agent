@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 const industries = [
+
   { id: 'restaurant', name: 'Restaurant', desc: 'Bookings, orders & voice agent' },
   { id: 'insurance', name: 'Insurance', desc: 'Claims, policies & client calls' },
 ]
@@ -14,7 +14,7 @@ function CheckboxIcon({ className = '' }) {
 }
 
 function LoginPage() {
-  const navigate = useNavigate()
+
   const { login } = useAuth()
   const [selectedIndustry, setSelectedIndustry] = useState('restaurant')
   const [email, setEmail] = useState('')
@@ -49,7 +49,24 @@ function LoginPage() {
       }
 
       login(data.token, data.user)
-      navigate(`/dashboard/${selectedIndustry}`)
+
+      const dashboardUrls = {
+        insurance: 'https://tata-aig-dashboard.pages.dev',
+        restaurant: 'https://restaurant-dashboard.pages.dev',
+      }
+
+      // admin@restaurant.com
+// test123
+
+      const dashboardUrl = dashboardUrls[selectedIndustry]
+
+      if (dashboardUrl) {
+        window.location.href = `${dashboardUrl}?token=${encodeURIComponent(data.token)}`
+        return
+      }
+
+      setError('Invalid industry selected')
+
     } catch {
       setError('Cannot connect to server. Make sure the backend is running.')
     } finally {
