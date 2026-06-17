@@ -1,21 +1,18 @@
-const jwt = require('jsonwebtoken')
+import { verify } from 'hono/jwt'
 
-const verifyToken = (req, res, next) => {
-  const authHeader = req.headers.authorization
+export const verifyToken = async (c, next) => {
+  const authHeader = c.req.header('Authorization')
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ message: 'Authorization header missing' })
+  if (!authHeader?.startsWith('Bearer ')) {
+    return c.json({ message: 'Authorization header missing' }, 401)
   }
-
-  const token = authHeader.split(' ')[1]
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET)
-    req.user = decoded
-    next()
-  } catch (err) {
-    return res.status(401).json({ message: 'Token invalid or expired' })
+    const token = authHeader.split(' ')[1]
+    const decoded = await verify(token, c.env.JWT_SECRET)
+    c.set('user', decoded)
+    await next()
+  } catch {
+    return c.json({ message: 'Token invalid or expired' }, 401)
   }
 }
-
-module.exports = verifyToken

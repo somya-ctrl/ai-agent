@@ -1,0 +1,9 @@
+name = "agentai-auth-service"
+main = "src/index.js"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "agentai-auth"
+database_id = "d0c4b48d-420c-446e-8d3f-2d2a38825d15"

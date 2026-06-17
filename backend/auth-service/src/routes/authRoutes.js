@@ -1,11 +1,9 @@
-const express = require('express')
-const router = express.Router()
-const { login, verifyToken } = require('../controllers/authController')
+import { Hono } from 'hono'
+import { login, verifyToken } from '../controllers/authController.js'
 
-// Public
+const router = new Hono()
+
 router.post('/login', login)
-
-// Internal — called by the API gateway to validate a JWT
 router.get('/verify', verifyToken)
 
-module.exports = router
+export default router

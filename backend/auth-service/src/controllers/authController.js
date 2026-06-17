@@ -1,29 +1,28 @@
-const bcrypt = require('bcryptjs')
-const jwt = require('jsonwebtoken')
-const { findByEmail } = require('../models/User')
+import bcrypt from 'bcryptjs'
+import { sign, verify } from 'hono/jwt'
+import { findByEmail } from '../models/User.js'
 
-// POST /api/auth/login
-const login = async (req, res) => {
+export const login = async (c) => {
   try {
-    const { email, password, industry } = req.body
+    const { email, password, industry } = await c.req.json()
 
     if (!email || !password || !industry) {
-      return res.status(400).json({ message: 'email, password and industry are required' })
+      return c.json({ message: 'email, password and industry are required' }, 400)
     }
 
-    const user = await findByEmail(email.toLowerCase().trim())
+    const user = await findByEmail(c.env.DB, email.toLowerCase().trim())
 
     if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' })
+      return c.json({ message: 'Invalid credentials' }, 401)
     }
 
     if (user.industry !== industry) {
-      return res.status(403).json({ message: `Account is not registered for the ${industry} industry` })
+      return c.json({ message: `Account is not registered for the ${industry} industry` }, 403)
     }
 
     const passwordMatch = await bcrypt.compare(password, user.password_hash)
     if (!passwordMatch) {
-      return res.status(401).json({ message: 'Invalid credentials' })
+      return c.json({ message: 'Invalid credentials' }, 401)
     }
 
     const payload = {
@@ -32,13 +31,12 @@ const login = async (req, res) => {
       industry: user.industry,
       entity_id: user.entity_id,
       vertical: user.industry,
+      exp: Math.floor(Date.now() / 1000) + 8 * 60 * 60,
     }
 
-    const token = jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: process.env.JWT_EXPIRES_IN || '8h',
-    })
+    const token = await sign(payload, c.env.JWT_SECRET)
 
-    return res.status(200).json({
+    return c.json({
       token,
       user: {
         id: user.id,
@@ -49,26 +47,23 @@ const login = async (req, res) => {
     })
   } catch (err) {
     console.error('Login error:', err.message)
-    return res.status(500).json({ message: 'Internal server error' })
+    return c.json({ message: 'Internal server error' }, 500)
   }
 }
 
-// POST /api/auth/verify  — validates a token (called by API gateway)
-const verifyToken = (req, res) => {
-  const authHeader = req.headers.authorization
+export const verifyToken = async (c) => {
+  const authHeader = c.req.header('Authorization')
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ message: 'No token provided' })
+  if (!authHeader?.startsWith('Bearer ')) {
+    return c.json({ message: 'No token provided' }, 401)
   }
 
   const token = authHeader.split(' ')[1]
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET)
-    return res.status(200).json({ valid: true, payload: decoded })
-  } catch (err) {
-    return res.status(401).json({ valid: false, message: 'Token invalid or expired' })
+    const decoded = await verify(token, c.env.JWT_SECRET)
+    return c.json({ valid: true, payload: decoded })
+  } catch {
+    return c.json({ valid: false, message: 'Token invalid or expired' }, 401)
   }
 }
-
-module.exports = { login, verifyToken }
