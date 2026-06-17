@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 
 const industries = [
   { id: 'restaurant', name: 'Restaurant', desc: 'Bookings, orders & voice agent' },
@@ -14,19 +15,46 @@ function CheckboxIcon({ className = '' }) {
 
 function LoginPage() {
   const navigate = useNavigate()
+  const { login } = useAuth()
   const [selectedIndustry, setSelectedIndustry] = useState('restaurant')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
   const selected = industries.find((i) => i.id === selectedIndustry)
 
   const handleChange = () => {
     setSelectedIndustry((prev) => (prev === 'restaurant' ? 'insurance' : 'restaurant'))
+    setError('')
   }
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault()
-    navigate(selectedIndustry === 'restaurant' ? '/dashboard/restaurant' : '/dashboard/insurance')
+    setError('')
+    setLoading(true)
+
+    try {
+      const res = await fetch('https://agentai-auth-service.agarwalsomya224.workers.dev/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, industry: selectedIndustry }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.message || 'Login failed')
+        return
+      }
+
+      login(data.token, data.user)
+      navigate(`/dashboard/${selectedIndustry}`)
+    } catch {
+      setError('Cannot connect to server. Make sure the backend is running.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -145,12 +173,18 @@ function LoginPage() {
             </a>
           </div>
 
+          {/* Error message */}
+          {error && (
+            <p className="text-red-500 text-xs text-center -mt-1">{error}</p>
+          )}
+
           {/* Submit */}
           <button
             type="submit"
-            className="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold py-4 rounded-xl text-sm transition-colors duration-200"
+            disabled={loading}
+            className="w-full bg-gray-900 hover:bg-gray-800 disabled:bg-gray-400 text-white font-semibold py-4 rounded-xl text-sm transition-colors duration-200"
           >
-            Login to dashboard →
+            {loading ? 'Logging in...' : 'Login to dashboard →'}
           </button>
         </form>
 
