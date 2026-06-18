@@ -19,7 +19,8 @@ const PrivateRoute = ({ children, industry }) => {
   }
 
   // Admin can access any dashboard; others are restricted to their own industry
-  if (industry && user.industry !== industry && user.industry !== 'admin') {
+  const isAdmin = user.role === 'admin' || user.industry === 'admin'
+  if (industry && user.industry !== industry && !isAdmin) {
     return <Navigate to="/login" replace />
   }
 

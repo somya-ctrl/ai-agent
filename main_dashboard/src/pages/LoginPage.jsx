@@ -38,12 +38,16 @@ function LoginPage() {
 
       login(data.token, data.user)
 
-      if (data.user.industry === 'admin') {
+      const isAdmin = data.user.role === 'admin' || data.user.industry === 'admin'
+
+      if (isAdmin) {
         setShowIndustryPicker(true)
       } else if (data.user.industry === 'restaurant') {
         navigate('/dashboard/restaurant')
       } else if (data.user.industry === 'insurance') {
         navigate('/dashboard/insurance')
+      } else {
+        setError('Unknown industry. Please contact your admin.')
       }
     } catch {
       setError('Cannot connect to server. Please try again.')
@@ -52,6 +56,7 @@ function LoginPage() {
     }
   }
 
+  /* ── Admin industry picker ── */
   if (showIndustryPicker) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center p-4">
@@ -82,11 +87,12 @@ function LoginPage() {
     )
   }
 
+  /* ── Login form ── */
   return (
     <div className="min-h-screen bg-white flex items-center justify-center p-3 sm:p-4">
       <div className="grid grid-cols-1 lg:grid-cols-2 w-full max-w-5xl border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
 
-        {/* Left Panel - Brand (Blue) */}
+        {/* Left Panel */}
         <div className="bg-blue-900 p-6 sm:p-8 lg:p-10 flex flex-col justify-between gap-8 lg:gap-0">
           <div>
             <div className="flex items-center gap-2 text-blue-50 text-base sm:text-lg font-semibold mb-4 sm:mb-6">
@@ -106,7 +112,6 @@ function LoginPage() {
             </p>
           </div>
 
-          {/* Feature list - hidden on very small screens to reduce scroll before form */}
           <div className="hidden sm:block">
             {[
               { icon: '📞', text: 'Voice agent on your existing SIP number' },
@@ -124,7 +129,7 @@ function LoginPage() {
           <p className="text-xs text-blue-300">© 2026 AgentAI. All rights reserved.</p>
         </div>
 
-        {/* Right Panel - Login Form */}
+        {/* Right Panel */}
         <div className="bg-white p-6 sm:p-8 lg:p-10 flex flex-col justify-center">
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Welcome back</h1>
           <p className="text-sm text-gray-500 mb-6 lg:mb-8 leading-relaxed">
