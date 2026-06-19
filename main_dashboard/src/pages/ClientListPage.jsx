@@ -1,22 +1,9 @@
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { dashboardUrls } from '../App'
 
-const MOCK_CLIENTS = {
-  restaurant: [
-    { id: 'spice-garden',  name: 'Spice Garden', type: 'Indian Restaurant', location: 'London, UK' },
-    { id: 'pizza-hub',     name: 'Pizza Hub',     type: 'Pizza Chain',       location: 'Manchester, UK' },
-    { id: 'tasty-bites',   name: 'Tasty Bites',   type: 'Fast Food',         location: 'Birmingham, UK' },
-    { id: 'curry-palace',  name: 'Curry Palace',  type: 'Indian Restaurant', location: 'Leeds, UK' },
-    { id: 'burger-barn',   name: 'Burger Barn',   type: 'Burger Joint',      location: 'Bristol, UK' },
-  ],
-  insurance: [
-    { id: 'shield-cover',  name: 'Shield Cover',  type: 'General Insurance', location: 'Mumbai, IN' },
-    { id: 'safe-policies', name: 'Safe Policies', type: 'Life Insurance',    location: 'Delhi, IN' },
-    { id: 'trust-insure',  name: 'Trust Insure',  type: 'Health Insurance',  location: 'Bangalore, IN' },
-    { id: 'nova-protect',  name: 'Nova Protect',  type: 'Motor Insurance',   location: 'Pune, IN' },
-  ],
-}
+const AUTH_SERVICE = 'https://agentai-auth-service.agarwalsomya224.workers.dev'
 
 const INDUSTRY_META = {
   restaurant: { icon: '🍽️', label: 'Restaurant' },
@@ -28,8 +15,32 @@ function ClientListPage() {
   const { token, user } = useAuth()
   const navigate = useNavigate()
 
-  const clients = MOCK_CLIENTS[industry] || []
-  const meta    = INDUSTRY_META[industry] || { icon: '🏢', label: industry }
+  const [clients, setClients]   = useState([])
+  const [loading, setLoading]   = useState(true)
+  const [error, setError]       = useState(null)
+
+  const meta = INDUSTRY_META[industry] || { icon: '🏢', label: industry }
+
+  useEffect(() => {
+    setLoading(true)
+    setError(null)
+
+    fetch(`${AUTH_SERVICE}/api/clients/${industry}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => {
+        if (!r.ok) throw new Error(`Server error: ${r.status}`)
+        return r.json()
+      })
+      .then((data) => {
+        setClients(data.clients || [])
+        setLoading(false)
+      })
+      .catch((err) => {
+        setError(err.message)
+        setLoading(false)
+      })
+  }, [industry, token])
 
   const handleSelect = (client) => {
     const baseUrl = dashboardUrls[industry]
@@ -57,25 +68,46 @@ function ClientListPage() {
           <p className="text-sm text-gray-500">Select a client to open their dashboard</p>
         </div>
 
+        {/* States */}
+        {loading && (
+          <div className="flex flex-col gap-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-20 bg-white border border-gray-100 rounded-2xl animate-pulse" />
+            ))}
+          </div>
+        )}
+
+        {error && (
+          <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-sm text-red-600">
+            Failed to load clients: {error}
+          </div>
+        )}
+
         {/* Client cards */}
-        <div className="flex flex-col gap-3">
-          {clients.map((client) => (
-            <button
-              key={client.id}
-              onClick={() => handleSelect(client)}
-              className="flex items-center gap-4 p-5 bg-white border border-gray-100 hover:border-blue-400 rounded-2xl text-left shadow-sm hover:shadow-md transition-all duration-200 group"
-            >
-              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-lg font-bold text-blue-600 flex-shrink-0">
-                {client.name[0]}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-gray-900 group-hover:text-blue-700">{client.name}</p>
-                <p className="text-xs text-gray-400">{client.type} · {client.location}</p>
-              </div>
-              <span className="text-gray-300 group-hover:text-blue-500 text-xl flex-shrink-0">→</span>
-            </button>
-          ))}
-        </div>
+        {!loading && !error && (
+          <div className="flex flex-col gap-3">
+            {clients.length === 0 ? (
+              <p className="text-center text-sm text-gray-400 py-8">No clients found for this industry.</p>
+            ) : (
+              clients.map((client) => (
+                <button
+                  key={client.id}
+                  onClick={() => handleSelect(client)}
+                  className="flex items-center gap-4 p-5 bg-white border border-gray-100 hover:border-blue-400 rounded-2xl text-left shadow-sm hover:shadow-md transition-all duration-200 group"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-lg font-bold text-blue-600 flex-shrink-0">
+                    {client.name[0]}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-gray-900 group-hover:text-blue-700">{client.name}</p>
+                    <p className="text-xs text-gray-400">{client.type} · {client.location}</p>
+                  </div>
+                  <span className="text-gray-300 group-hover:text-blue-500 text-xl flex-shrink-0">→</span>
+                </button>
+              ))
+            )}
+          </div>
+        )}
 
         <p className="text-center text-xs text-gray-300 mt-8">
           Logged in as admin · <span className="text-gray-400">{user?.email}</span>

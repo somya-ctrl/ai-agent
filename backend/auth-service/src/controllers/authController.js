@@ -24,6 +24,7 @@ export const login = async (c) => {
     const payload = {
       userId: user.id,
       email: user.email,
+      role: user.industry === 'admin' ? 'admin' : 'client',
       industry: user.industry,
       entity_id: user.entity_id,
       vertical: user.industry,
@@ -57,7 +58,7 @@ export const verifyToken = async (c) => {
   const token = authHeader.split(' ')[1]
 
   try {
-    const decoded = await verify(token, c.env.JWT_SECRET)
+    const decoded = await verify(token, c.env.JWT_SECRET, 'HS256')
     return c.json({ valid: true, payload: decoded })
   } catch {
     return c.json({ valid: false, message: 'Token invalid or expired' }, 401)
