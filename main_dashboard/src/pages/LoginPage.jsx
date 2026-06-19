@@ -70,7 +70,7 @@ function LoginPage() {
             {INDUSTRIES.map((ind) => (
               <button
                 key={ind.id}
-                onClick={() => navigate(`/dashboard/${ind.id}`)}
+                onClick={() => navigate(`/clients/${ind.id}`)}
                 className="flex items-center gap-4 p-5 border-2 border-gray-100 hover:border-blue-500 rounded-2xl text-left transition-all duration-200 group"
               >
                 <span className="text-3xl">{ind.icon}</span>

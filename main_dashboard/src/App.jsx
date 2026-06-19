@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import PrivateRoute from './components/PrivateRoute'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
+import ClientListPage from './pages/ClientListPage'
 
 export const dashboardUrls = {
   restaurant: 'https://dashboard.growwithaii.com/',
@@ -11,14 +12,18 @@ export const dashboardUrls = {
 }
 
 function DashboardRedirect({ industry }) {
-  const { token } = useAuth()
+  const { token, user } = useAuth()
 
   useEffect(() => {
     const url = dashboardUrls[industry]
     if (url && token) {
-      window.location.href = `${url}?token=${encodeURIComponent(token)}`
+      const clientId = user?.client_id || user?.clientId
+      const dest = clientId
+        ? `${url}?token=${encodeURIComponent(token)}&client_id=${clientId}`
+        : `${url}?token=${encodeURIComponent(token)}`
+      window.location.href = dest
     }
-  }, [industry, token])
+  }, [industry, token, user])
 
   return (
     <div className="min-h-screen flex items-center justify-center text-gray-400 text-sm">
@@ -36,6 +41,17 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
 
           {/* Protected — only DB users with matching industry (or admin) can access */}
+          {/* Admin: client selection per industry */}
+          <Route
+            path="/clients/:industry"
+            element={
+              <PrivateRoute adminOnly>
+                <ClientListPage />
+              </PrivateRoute>
+            }
+          />
+
+          {/* client_user: direct redirect scoped to their client_id */}
           <Route
             path="/dashboard/restaurant"
             element={

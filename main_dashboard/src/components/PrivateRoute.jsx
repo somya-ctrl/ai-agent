@@ -11,15 +11,19 @@ const isTokenValid = (token) => {
   }
 }
 
-const PrivateRoute = ({ children, industry }) => {
+const PrivateRoute = ({ children, industry, adminOnly }) => {
   const { token, user } = useAuth()
 
   if (!token || !user || !isTokenValid(token)) {
     return <Navigate to="/login" replace />
   }
 
-  // Admin can access any dashboard; others are restricted to their own industry
   const isAdmin = user.role === 'admin' || user.industry === 'admin'
+
+  if (adminOnly && !isAdmin) {
+    return <Navigate to="/login" replace />
+  }
+
   if (industry && user.industry !== industry && !isAdmin) {
     return <Navigate to="/login" replace />
   }
