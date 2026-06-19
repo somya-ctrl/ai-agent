@@ -10,14 +10,181 @@ const INDUSTRY_META = {
   insurance:  { icon: '🛡️', label: 'Insurance'  },
 }
 
+// ── Add User Modal ──────────────────────────────────────────────
+function AddUserModal({ industry, clients, token, onClose, onSuccess }) {
+  const [form, setForm]       = useState({ email: '', password: '', entity_id: '' })
+  const [loading, setLoading] = useState(false)
+  const [error, setError]     = useState(null)
+
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
+
+    try {
+      const res = await fetch(`${AUTH_SERVICE}/api/users`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          email:     form.email.trim(),
+          password:  form.password,
+          industry,
+          entity_id: form.entity_id || null,
+        }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || 'Failed to create user')
+      onSuccess({ ...data.user, password: form.password })
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-lg font-bold text-gray-900">Add New User</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Email</label>
+            <input
+              type="email"
+              required
+              value={form.email}
+              onChange={set('email')}
+              placeholder="client@example.com"
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Password</label>
+            <input
+              type="text"
+              required
+              value={form.password}
+              onChange={set('password')}
+              placeholder="Set a password for this user"
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Assign to Client (optional)</label>
+            <select
+              value={form.entity_id}
+              onChange={set('entity_id')}
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            >
+              <option value="">— No client assigned —</option>
+              {clients.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {error && (
+            <p className="text-xs text-red-500 bg-red-50 rounded-xl px-4 py-2">{error}</p>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold rounded-xl py-2.5 text-sm transition-colors"
+          >
+            {loading ? 'Creating…' : 'Create User'}
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+// ── Credentials Modal ───────────────────────────────────────────
+function CredentialsModal({ user, onClose }) {
+  const [copied, setCopied] = useState(false)
+
+  const text = `Login Credentials\nEmail: ${user.email}\nPassword: ${user.password}\nIndustry: ${user.industry}`
+
+  const copy = () => {
+    navigator.clipboard.writeText(text)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-2xl">✅</span>
+          <h2 className="text-lg font-bold text-gray-900">User Created!</h2>
+        </div>
+
+        <p className="text-sm text-gray-500 mb-4">Share these credentials with the client:</p>
+
+        <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 font-mono text-sm space-y-2">
+          <div className="flex justify-between">
+            <span className="text-gray-400">Email</span>
+            <span className="text-gray-900 font-semibold">{user.email}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-400">Password</span>
+            <span className="text-gray-900 font-semibold">{user.password}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-400">Industry</span>
+            <span className="text-gray-900 font-semibold">{user.industry}</span>
+          </div>
+          {user.entity_id && (
+            <div className="flex justify-between">
+              <span className="text-gray-400">Client ID</span>
+              <span className="text-gray-900 font-semibold">{user.entity_id}</span>
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-3 mt-5">
+          <button
+            onClick={copy}
+            className="flex-1 border border-blue-200 text-blue-600 hover:bg-blue-50 font-semibold rounded-xl py-2.5 text-sm transition-colors"
+          >
+            {copied ? 'Copied!' : 'Copy Credentials'}
+          </button>
+          <button
+            onClick={onClose}
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl py-2.5 text-sm transition-colors"
+          >
+            Done
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Main Page ───────────────────────────────────────────────────
 function ClientListPage() {
   const { industry } = useParams()
   const { token, user } = useAuth()
   const navigate = useNavigate()
 
-  const [clients, setClients]   = useState([])
-  const [loading, setLoading]   = useState(true)
-  const [error, setError]       = useState(null)
+  const [clients, setClients]         = useState([])
+  const [loading, setLoading]         = useState(true)
+  const [error, setError]             = useState(null)
+  const [showAddUser, setShowAddUser] = useState(false)
+  const [newUser, setNewUser]         = useState(null)
 
   const meta = INDUSTRY_META[industry] || { icon: '🏢', label: industry }
 
@@ -32,14 +199,8 @@ function ClientListPage() {
         if (!r.ok) throw new Error(`Server error: ${r.status}`)
         return r.json()
       })
-      .then((data) => {
-        setClients(data.clients || [])
-        setLoading(false)
-      })
-      .catch((err) => {
-        setError(err.message)
-        setLoading(false)
-      })
+      .then((data) => { setClients(data.clients || []); setLoading(false) })
+      .catch((err) => { setError(err.message); setLoading(false) })
   }, [industry, token])
 
   const handleSelect = (client) => {
@@ -61,14 +222,22 @@ function ClientListPage() {
           >
             ← Back
           </button>
-          <div className="flex items-center gap-3 mb-1">
-            <span className="text-2xl">{meta.icon}</span>
-            <h1 className="text-2xl font-bold text-gray-900">{meta.label} Clients</h1>
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">{meta.icon}</span>
+              <h1 className="text-2xl font-bold text-gray-900">{meta.label} Clients</h1>
+            </div>
+            <button
+              onClick={() => setShowAddUser(true)}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
+            >
+              + Add User
+            </button>
           </div>
           <p className="text-sm text-gray-500">Select a client to open their dashboard</p>
         </div>
 
-        {/* States */}
+        {/* Loading skeletons */}
         {loading && (
           <div className="flex flex-col gap-3">
             {[1, 2, 3].map((i) => (
@@ -77,6 +246,7 @@ function ClientListPage() {
           </div>
         )}
 
+        {/* Error */}
         {error && (
           <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-sm text-red-600">
             Failed to load clients: {error}
@@ -112,8 +282,25 @@ function ClientListPage() {
         <p className="text-center text-xs text-gray-300 mt-8">
           Logged in as admin · <span className="text-gray-400">{user?.email}</span>
         </p>
-
       </div>
+
+      {/* Modals */}
+      {showAddUser && (
+        <AddUserModal
+          industry={industry}
+          clients={clients}
+          token={token}
+          onClose={() => setShowAddUser(false)}
+          onSuccess={(u) => { setShowAddUser(false); setNewUser(u) }}
+        />
+      )}
+
+      {newUser && (
+        <CredentialsModal
+          user={newUser}
+          onClose={() => setNewUser(null)}
+        />
+      )}
     </div>
   )
 }
