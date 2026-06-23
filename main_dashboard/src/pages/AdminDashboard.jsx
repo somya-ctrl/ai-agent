@@ -20,11 +20,56 @@ const STATUS_PILL = {
 
 const inputCls = 'w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent'
 
+// ── Credentials Modal ─────────────────────────────────────────────
+function CredentialsModal({ creds, onClose }) {
+  const [copied, setCopied] = useState(false)
+  const text = `Client: ${creds.clientName}\nEmail: ${creds.email}\nPassword: ${creds.password}\nIndustry: ${creds.industry}`
+  const copy = () => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000) }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="bg-[#112136] border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-2xl">✅</span>
+          <h2 className="text-lg font-bold text-white">Client Created!</h2>
+        </div>
+        <p className="text-sm text-slate-400 mb-4">Share these login credentials with the client for their dashboard access:</p>
+
+        <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-4 font-mono text-sm space-y-2.5">
+          {[
+            { label: 'Client',   value: creds.clientName },
+            { label: 'Email',    value: creds.email },
+            { label: 'Password', value: creds.password },
+            { label: 'Industry', value: creds.industry },
+          ].map(({ label, value }) => (
+            <div key={label} className="flex justify-between gap-4">
+              <span className="text-slate-500 flex-shrink-0">{label}</span>
+              <span className="text-white font-semibold text-right">{value}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex gap-3 mt-5">
+          <button onClick={copy}
+            className="flex-1 border border-teal-500/40 text-teal-400 hover:bg-teal-500/10 font-semibold rounded-xl py-2.5 text-sm transition-colors">
+            {copied ? '✓ Copied!' : 'Copy Credentials'}
+          </button>
+          <button onClick={onClose}
+            className="flex-1 bg-teal-600 hover:bg-teal-500 text-white font-semibold rounded-xl py-2.5 text-sm transition-colors">
+            Done
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Add Client Modal ──────────────────────────────────────────────
 function AddClientModal({ token, onClose, onSuccess }) {
   const [form, setForm] = useState({
     name: '', industry: 'restaurant', type: '', location: '',
     monthly_rate: '', payment_status: 'pending',
+    email: '', password: '',
   })
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState(null)
@@ -36,14 +81,35 @@ function AddClientModal({ token, onClose, onSuccess }) {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`${AUTH_SERVICE}/api/clients`, {
+      // Step 1 — create the client
+      const clientRes = await fetch(`${AUTH_SERVICE}/api/clients`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ ...form, monthly_rate: Number(form.monthly_rate) || 0 }),
       })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.message || 'Failed to create client')
-      onSuccess(data.client)
+      const clientData = await clientRes.json()
+      if (!clientRes.ok) throw new Error(clientData.message || 'Failed to create client')
+
+      // Step 2 — create the dashboard user linked to this client
+      const userRes = await fetch(`${AUTH_SERVICE}/api/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          email:     form.email.trim(),
+          password:  form.password,
+          industry:  form.industry,
+          entity_id: clientData.client.id,
+        }),
+      })
+      const userData = await userRes.json()
+      if (!userRes.ok) throw new Error(userData.message || 'Client created but failed to create user')
+
+      onSuccess({
+        clientName: form.name.trim(),
+        email:      form.email.trim(),
+        password:   form.password,
+        industry:   form.industry,
+      })
     } catch (err) {
       setError(err.message)
     } finally {
@@ -53,13 +119,17 @@ function AddClientModal({ token, onClose, onSuccess }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-[#112136] border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md p-6">
+      <div className="bg-[#112136] border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-bold text-white">Add New Client</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-white text-xl leading-none transition-colors">✕</button>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+
+          {/* ── Client Info ── */}
+          <p className="text-xs font-semibold text-teal-400 uppercase tracking-wider">Client Details</p>
+
           <div>
             <label className="block text-xs font-medium text-slate-400 mb-1">Client Name *</label>
             <input type="text" required value={form.name} onChange={set('name')}
@@ -69,8 +139,7 @@ function AddClientModal({ token, onClose, onSuccess }) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-slate-400 mb-1">Industry *</label>
-              <select value={form.industry} onChange={set('industry')}
-                className={inputCls + ' bg-slate-700/50'}>
+              <select value={form.industry} onChange={set('industry')} className={inputCls + ' bg-slate-700/50'}>
                 <option value="restaurant">🍽️ Restaurant</option>
                 <option value="insurance">🛡️ Insurance</option>
               </select>
@@ -96,12 +165,29 @@ function AddClientModal({ token, onClose, onSuccess }) {
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-400 mb-1">Payment Status</label>
-              <select value={form.payment_status} onChange={set('payment_status')}
-                className={inputCls + ' bg-slate-700/50'}>
+              <select value={form.payment_status} onChange={set('payment_status')} className={inputCls + ' bg-slate-700/50'}>
                 <option value="pending">Pending</option>
                 <option value="paid">Paid</option>
                 <option value="overdue">Overdue</option>
               </select>
+            </div>
+          </div>
+
+          {/* ── Dashboard Credentials ── */}
+          <div className="border-t border-slate-700 pt-4 mt-1">
+            <p className="text-xs font-semibold text-teal-400 uppercase tracking-wider mb-3">Dashboard Login Credentials</p>
+
+            <div className="flex flex-col gap-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1">Email *</label>
+                <input type="email" required value={form.email} onChange={set('email')}
+                  placeholder="client@example.com" className={inputCls} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1">Password *</label>
+                <input type="text" required value={form.password} onChange={set('password')}
+                  placeholder="Set a password for this client" className={inputCls} />
+              </div>
             </div>
           </div>
 
@@ -110,8 +196,8 @@ function AddClientModal({ token, onClose, onSuccess }) {
           )}
 
           <button type="submit" disabled={loading}
-            className="w-full bg-teal-600 hover:bg-teal-500 disabled:opacity-50 text-white font-semibold rounded-xl py-2.5 text-sm transition-colors">
-            {loading ? 'Creating…' : 'Create Client'}
+            className="w-full bg-teal-600 hover:bg-teal-500 disabled:opacity-50 text-white font-semibold rounded-xl py-2.5 text-sm transition-colors mt-1">
+            {loading ? 'Creating client & user…' : 'Create Client + Credentials'}
           </button>
         </form>
       </div>
@@ -145,6 +231,7 @@ function AdminDashboard() {
   const [industryFilter, setIndustryFilter] = useState('all')
   const [search, setSearch]     = useState('')
   const [showAddClient, setShowAddClient]   = useState(false)
+  const [newCreds, setNewCreds]             = useState(null)
 
   const loadClients = () => {
     setLoading(true)
@@ -399,8 +486,12 @@ function AdminDashboard() {
         <AddClientModal
           token={token}
           onClose={() => setShowAddClient(false)}
-          onSuccess={() => { setShowAddClient(false); loadClients() }}
+          onSuccess={(creds) => { setShowAddClient(false); loadClients(); setNewCreds(creds) }}
         />
+      )}
+
+      {newCreds && (
+        <CredentialsModal creds={newCreds} onClose={() => setNewCreds(null)} />
       )}
     </div>
   )
