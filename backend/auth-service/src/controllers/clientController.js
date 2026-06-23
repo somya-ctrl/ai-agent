@@ -42,6 +42,31 @@ export const getAllClients = async (c) => {
   return c.json({ clients: results, stats: { total: results.length, revenue, pending } })
 }
 
+// GET /api/admin/chart — admin only, daily calls aggregated by industry (last 30 days)
+export const getChartData = async (c) => {
+  const result = await getPayload(c)
+  if (result.error) return c.json({ message: 'Unauthorized', reason: result.error }, 401)
+  if (result.payload.industry !== 'admin') return c.json({ message: 'Forbidden' }, 403)
+
+  const { results } = await c.env.DB.prepare(`
+    SELECT cm.date, c.industry, SUM(cm.calls_total) as calls
+    FROM client_metrics cm
+    JOIN clients c ON cm.client_id = c.id
+    WHERE cm.date >= date('now', '-29 days')
+    GROUP BY cm.date, c.industry
+    ORDER BY cm.date ASC
+  `).all()
+
+  // Pivot into { date, restaurant, insurance } rows for recharts
+  const map = {}
+  for (const row of results) {
+    if (!map[row.date]) map[row.date] = { date: row.date, restaurant: 0, insurance: 0 }
+    map[row.date][row.industry] = Number(row.calls || 0)
+  }
+
+  return c.json({ chartData: Object.values(map) })
+}
+
 // POST /api/clients — admin only, create a new client
 export const createClient = async (c) => {
   const result = await getPayload(c)
