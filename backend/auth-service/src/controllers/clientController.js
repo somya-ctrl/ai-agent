@@ -13,6 +13,76 @@ const getPayload = async (c) => {
   }
 }
 
+// GET /api/admin/clients — admin only, all clients across industries with billing info
+export const getAllClients = async (c) => {
+  const result = await getPayload(c)
+  if (result.error) return c.json({ message: 'Unauthorized', reason: result.error }, 401)
+  if (result.payload.industry !== 'admin') return c.json({ message: 'Forbidden' }, 403)
+
+  let results
+  try {
+    const r = await c.env.DB.prepare(
+      `SELECT id, name, industry, type, location, monthly_rate, payment_status
+       FROM clients WHERE is_active = 1 ORDER BY industry, name`
+    ).all()
+    results = r.results
+  } catch {
+    // billing columns not yet migrated — return defaults
+    const r = await c.env.DB.prepare(
+      `SELECT id, name, industry, type, location,
+              0 as monthly_rate, 'pending' as payment_status
+       FROM clients WHERE is_active = 1 ORDER BY industry, name`
+    ).all()
+    results = r.results
+  }
+
+  const revenue = results.reduce((s, cl) => s + (cl.payment_status === 'paid' ? Number(cl.monthly_rate || 0) : 0), 0)
+  const pending = results.reduce((s, cl) => s + (cl.payment_status !== 'paid' ? Number(cl.monthly_rate || 0) : 0), 0)
+
+  return c.json({ clients: results, stats: { total: results.length, revenue, pending } })
+}
+
+// POST /api/clients — admin only, create a new client
+export const createClient = async (c) => {
+  const result = await getPayload(c)
+  if (result.error) return c.json({ message: 'Unauthorized', reason: result.error }, 401)
+  if (result.payload.industry !== 'admin') return c.json({ message: 'Forbidden' }, 403)
+
+  let body
+  try { body = await c.req.json() }
+  catch { return c.json({ message: 'Invalid JSON body' }, 400) }
+
+  const { name, industry, type, location, monthly_rate, payment_status } = body
+  if (!name || !industry) return c.json({ message: 'name and industry are required' }, 400)
+
+  const id = crypto.randomUUID()
+  const webhook_key = crypto.randomUUID()
+
+  try {
+    await c.env.DB.prepare(
+      `INSERT INTO clients (id, name, industry, type, location, webhook_key, is_active, monthly_rate, payment_status)
+       VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)`
+    ).bind(id, name.trim(), industry, type || '', location || '', webhook_key, monthly_rate || 0, payment_status || 'pending').run()
+  } catch {
+    // billing columns not yet migrated — insert without them
+    await c.env.DB.prepare(
+      `INSERT INTO clients (id, name, industry, type, location, webhook_key, is_active)
+       VALUES (?, ?, ?, ?, ?, ?, 1)`
+    ).bind(id, name.trim(), industry, type || '', location || '', webhook_key).run()
+  }
+
+  return c.json({
+    message: 'Client created successfully',
+    client: {
+      id, name: name.trim(), industry,
+      type: type || '', location: location || '',
+      monthly_rate: monthly_rate || 0,
+      payment_status: payment_status || 'pending',
+      webhook_key,
+    },
+  }, 201)
+}
+
 // GET /api/clients/:industry  — admin only
 export const getClients = async (c) => {
   const result = await getPayload(c)

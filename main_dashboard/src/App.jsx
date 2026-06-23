@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import PrivateRoute from './components/PrivateRoute'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
+import AdminDashboard from './pages/AdminDashboard'
 import ClientListPage from './pages/ClientListPage'
 
 export const dashboardUrls = {
@@ -40,8 +41,17 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
 
-          {/* Protected — only DB users with matching industry (or admin) can access */}
-          {/* Admin: client selection per industry */}
+          {/* Admin: overview dashboard */}
+          <Route
+            path="/admin"
+            element={
+              <PrivateRoute adminOnly>
+                <AdminDashboard />
+              </PrivateRoute>
+            }
+          />
+
+          {/* Admin: client list per industry */}
           <Route
             path="/clients/:industry"
             element={

@@ -2,11 +2,6 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
-const INDUSTRIES = [
-  { id: 'restaurant', label: 'Restaurant', desc: 'Bookings, orders & voice agent', icon: '🍽️' },
-  { id: 'insurance', label: 'Insurance', desc: 'Claims, policies & client calls', icon: '🛡️' },
-]
-
 function LoginPage() {
   const navigate = useNavigate()
   const { login } = useAuth()
@@ -15,7 +10,6 @@ function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [showIndustryPicker, setShowIndustryPicker] = useState(false)
 
   const handleLogin = async (e) => {
     e.preventDefault()
@@ -41,7 +35,7 @@ function LoginPage() {
       const isAdmin = data.user.role === 'admin' || data.user.industry === 'admin'
 
       if (isAdmin) {
-        setShowIndustryPicker(true)
+        navigate('/admin')
       } else if (data.user.industry === 'restaurant') {
         navigate('/dashboard/restaurant')
       } else if (data.user.industry === 'insurance') {
@@ -54,37 +48,6 @@ function LoginPage() {
     } finally {
       setLoading(false)
     }
-  }
-
-  /* ── Admin industry picker ── */
-  if (showIndustryPicker) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <div className="text-3xl mb-3">👋</div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-1">Welcome, Admin</h2>
-            <p className="text-gray-500 text-sm">Choose which dashboard to open</p>
-          </div>
-          <div className="flex flex-col gap-4">
-            {INDUSTRIES.map((ind) => (
-              <button
-                key={ind.id}
-                onClick={() => navigate(`/clients/${ind.id}`)}
-                className="flex items-center gap-4 p-5 border-2 border-gray-100 hover:border-blue-500 rounded-2xl text-left transition-all duration-200 group"
-              >
-                <span className="text-3xl">{ind.icon}</span>
-                <div>
-                  <p className="font-bold text-gray-900 group-hover:text-blue-700">{ind.label}</p>
-                  <p className="text-sm text-gray-400">{ind.desc}</p>
-                </div>
-                <span className="ml-auto text-gray-300 group-hover:text-blue-500 text-xl">→</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    )
   }
 
   /* ── Login form ── */
