@@ -27,7 +27,6 @@ export const createUser = async (c) => {
     return c.json({ message: 'email, password and industry are required' }, 400)
   }
 
-  // Check if email already exists
   const existing = await c.env.DB.prepare(
     'SELECT id FROM users WHERE email = ?'
   ).bind(email.toLowerCase().trim()).first()
@@ -42,13 +41,7 @@ export const createUser = async (c) => {
   await c.env.DB.prepare(`
     INSERT INTO users (id, email, password_hash, industry, entity_id)
     VALUES (?, ?, ?, ?, ?)
-  `).bind(
-    id,
-    email.toLowerCase().trim(),
-    password_hash,
-    industry,
-    entity_id || null
-  ).run()
+  `).bind(id, email.toLowerCase().trim(), password_hash, industry, entity_id || null).run()
 
   return c.json({
     message: 'User created successfully',

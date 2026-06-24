@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import HeroSection from '../components/hero/HeroSection'
 
 function HomePage() {
   const navigate = useNavigate()
@@ -6,62 +7,8 @@ function HomePage() {
   return (
     <div className="min-h-screen bg-white">
 
-      {/* Navbar */}
-      <nav className="flex items-center justify-between px-8 py-4 border-b border-gray-100 bg-white shadow-sm">
-        <div className="flex items-center gap-2 text-xl font-semibold text-gray-900">
-          <span>🤖</span>
-          <span>AgentAI</span>
-        </div>
-        <button
-          onClick={() => navigate('/login')}
-          className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors duration-200"
-        >
-          Login
-        </button>
-      </nav>
-
-      {/* Hero */}
-      <section className="bg-gradient-to-b from-blue-50 to-white px-8 py-24 text-center">
-        <span className="inline-block bg-blue-100 text-blue-700 text-xs font-semibold px-4 py-1.5 rounded-full mb-6 uppercase tracking-wide">
-          AI-powered voice & messaging agents
-        </span>
-        <h1 className="text-5xl font-bold text-gray-900 leading-tight max-w-3xl mx-auto mb-6">
-          Automate customer conversations across every industry
-        </h1>
-        <p className="text-gray-500 text-lg max-w-xl mx-auto mb-10 leading-relaxed">
-          Deploy intelligent AI agents for inbound calls, WhatsApp, and bookings — without changing your existing phone number.
-        </p>
-        <div className="flex gap-4 justify-center flex-wrap">
-          <button
-            onClick={() => navigate('/login')}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-xl text-base transition-colors duration-200 shadow-md"
-          >
-            Get Started
-          </button>
-          <button
-            onClick={() => navigate('/login')}
-            className="bg-white hover:bg-gray-50 text-gray-700 font-semibold px-8 py-3 rounded-xl text-base border border-gray-200 transition-colors duration-200"
-          >
-            See How It Works
-          </button>
-        </div>
-      </section>
-
-      {/* Stats */}
-      <section className="bg-blue-600 py-10 px-8">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto text-center">
-          {[
-            { num: '24/7', label: 'Always Available' },
-            { num: '2 min', label: 'Setup Time' },
-            { num: '2', label: 'Industries Supported' },
-          ].map((stat) => (
-            <div key={stat.label}>
-              <div className="text-4xl font-bold text-white">{stat.num}</div>
-              <div className="text-blue-200 text-sm mt-1 font-medium">{stat.label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* Animated Hero — Navbar + Hero Content + Stats Bar */}
+      <HeroSection />
 
       {/* Industries */}
       <section className="px-8 py-16 bg-gray-50">
