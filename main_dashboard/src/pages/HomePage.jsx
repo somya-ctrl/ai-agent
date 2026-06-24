@@ -53,13 +53,13 @@ function HomePage() {
   const navigate = useNavigate()
 
   return (
-    <div style={{ background: '#000', minHeight: '100vh' }}>
+    <div style={{ background: '#0f0e17', minHeight: '100vh' }}>
 
       {/* Animated Hero */}
       <HeroSection />
 
       {/* Industries */}
-      <section style={{ padding: '80px 32px', background: '#000' }}>
+      <section style={{ padding: '80px 32px', background: '#0f0e17' }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
           <Label>Industries</Label>
           <Heading>Choose your industry</Heading>
@@ -96,7 +96,7 @@ function HomePage() {
       </section>
 
       {/* Features */}
-      <section style={{ padding: '80px 32px', background: '#0a0a14', borderTop: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+      <section style={{ padding: '80px 32px', background: '#13121f', borderTop: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
           <Label>Features</Label>
           <Heading>Everything your business needs</Heading>
@@ -120,7 +120,7 @@ function HomePage() {
       </section>
 
       {/* How It Works */}
-      <section style={{ padding: '80px 32px', background: '#000' }}>
+      <section style={{ padding: '80px 32px', background: '#0f0e17' }}>
         <div style={{ maxWidth: 640, margin: '0 auto' }}>
           <Label>How It Works</Label>
           <Heading>Up and running in three steps</Heading>
@@ -158,7 +158,7 @@ function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer style={{ padding: '24px 32px', borderTop: '1px solid rgba(255,255,255,0.08)', background: '#000', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+      <footer style={{ padding: '24px 32px', borderTop: '1px solid rgba(255,255,255,0.08)', background: '#0f0e17', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 20 }}>🤖</span>
           <span style={{ fontSize: 14, fontWeight: 700, color: '#e2e8f0' }}>AgentAI</span>
