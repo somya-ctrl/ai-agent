@@ -10,6 +10,12 @@ const INDUSTRY_META = {
   insurance:  { icon: '🛡️', label: 'Insurance'  },
 }
 
+const inputCls = `
+  w-full border rounded-xl px-4 py-2.5 text-sm transition-colors
+  bg-white/5 border-white/10 text-white placeholder-white/25
+  focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
+`
+
 // ── Add User Modal ──────────────────────────────────────────────
 function AddUserModal({ industry, clients, token, onClose, onSuccess }) {
   const [form, setForm]       = useState({ email: '', password: '', entity_id: '' })
@@ -22,22 +28,12 @@ function AddUserModal({ industry, clients, token, onClose, onSuccess }) {
     e.preventDefault()
     setLoading(true)
     setError(null)
-
     try {
       const res = await fetch(`${AUTH_SERVICE}/api/users`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          email:     form.email.trim(),
-          password:  form.password,
-          industry,
-          entity_id: form.entity_id || null,
-        }),
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ email: form.email.trim(), password: form.password, industry, entity_id: form.entity_id || null }),
       })
-
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || 'Failed to create user')
       onSuccess({ ...data.user, password: form.password })
@@ -49,61 +45,34 @@ function AddUserModal({ industry, clients, token, onClose, onSuccess }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold text-gray-900">Add New User</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)', padding: 16 }}>
+      <div style={{ background: '#0a0a14', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20, boxShadow: '0 24px 64px rgba(0,0,0,0.6)', width: '100%', maxWidth: 420, padding: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+          <h2 style={{ fontSize: 17, fontWeight: 700, color: '#fff' }}>Add New User</h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: 20, lineHeight: 1 }}>✕</button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Email</label>
-            <input
-              type="email"
-              required
-              value={form.email}
-              onChange={set('email')}
-              placeholder="client@example.com"
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#6b7280', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Email</label>
+            <input type="email" required value={form.email} onChange={set('email')} placeholder="client@example.com" className={inputCls} />
           </div>
-
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Password</label>
-            <input
-              type="text"
-              required
-              value={form.password}
-              onChange={set('password')}
-              placeholder="Set a password for this user"
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#6b7280', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Password</label>
+            <input type="text" required value={form.password} onChange={set('password')} placeholder="Set a password for this user" className={inputCls} />
           </div>
-
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Assign to Client (optional)</label>
-            <select
-              value={form.entity_id}
-              onChange={set('entity_id')}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-            >
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#6b7280', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Assign to Client (optional)</label>
+            <select value={form.entity_id} onChange={set('entity_id')} className={inputCls} style={{ background: '#0a0a14' }}>
               <option value="">— No client assigned —</option>
-              {clients.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
+              {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
 
-          {error && (
-            <p className="text-xs text-red-500 bg-red-50 rounded-xl px-4 py-2">{error}</p>
-          )}
+          {error && <p style={{ fontSize: 12, color: '#f87171', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '8px 14px' }}>{error}</p>}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold rounded-xl py-2.5 text-sm transition-colors"
-          >
+          <button type="submit" disabled={loading}
+            style={{ width: '100%', padding: '10px 0', borderRadius: 12, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', background: loading ? 'rgba(99,102,241,0.4)' : 'linear-gradient(to right, #4f46e5, #7c3aed)', color: '#fff', fontSize: 14, fontWeight: 700, boxShadow: '0 4px 16px rgba(99,102,241,0.3)' }}>
             {loading ? 'Creating…' : 'Create User'}
           </button>
         </form>
@@ -115,57 +84,34 @@ function AddUserModal({ industry, clients, token, onClose, onSuccess }) {
 // ── Credentials Modal ───────────────────────────────────────────
 function CredentialsModal({ user, onClose }) {
   const [copied, setCopied] = useState(false)
-
   const text = `Login Credentials\nEmail: ${user.email}\nPassword: ${user.password}\nIndustry: ${user.industry}`
-
-  const copy = () => {
-    navigator.clipboard.writeText(text)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
+  const copy = () => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000) }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-2xl">✅</span>
-          <h2 className="text-lg font-bold text-gray-900">User Created!</h2>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)', padding: 16 }}>
+      <div style={{ background: '#0a0a14', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20, boxShadow: '0 24px 64px rgba(0,0,0,0.6)', width: '100%', maxWidth: 420, padding: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+          <span style={{ fontSize: 24 }}>✅</span>
+          <h2 style={{ fontSize: 17, fontWeight: 700, color: '#fff' }}>User Created!</h2>
         </div>
+        <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 16 }}>Share these credentials with the client:</p>
 
-        <p className="text-sm text-gray-500 mb-4">Share these credentials with the client:</p>
-
-        <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 font-mono text-sm space-y-2">
-          <div className="flex justify-between">
-            <span className="text-gray-400">Email</span>
-            <span className="text-gray-900 font-semibold">{user.email}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-400">Password</span>
-            <span className="text-gray-900 font-semibold">{user.password}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-400">Industry</span>
-            <span className="text-gray-900 font-semibold">{user.industry}</span>
-          </div>
-          {user.entity_id && (
-            <div className="flex justify-between">
-              <span className="text-gray-400">Client ID</span>
-              <span className="text-gray-900 font-semibold">{user.entity_id}</span>
+        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '16px 20px', fontFamily: 'monospace', fontSize: 13, display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+          {[['Email', user.email], ['Password', user.password], ['Industry', user.industry], ...(user.entity_id ? [['Client ID', user.entity_id]] : [])].map(([label, val]) => (
+            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
+              <span style={{ color: '#4b5563' }}>{label}</span>
+              <span style={{ color: '#e2e8f0', fontWeight: 600 }}>{val}</span>
             </div>
-          )}
+          ))}
         </div>
 
-        <div className="flex gap-3 mt-5">
-          <button
-            onClick={copy}
-            className="flex-1 border border-blue-200 text-blue-600 hover:bg-blue-50 font-semibold rounded-xl py-2.5 text-sm transition-colors"
-          >
-            {copied ? 'Copied!' : 'Copy Credentials'}
+        <div style={{ display: 'flex', gap: 12 }}>
+          <button onClick={copy}
+            style={{ flex: 1, padding: '10px 0', borderRadius: 12, border: '1px solid rgba(99,102,241,0.4)', background: 'transparent', color: '#818cf8', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            {copied ? '✓ Copied!' : 'Copy Credentials'}
           </button>
-          <button
-            onClick={onClose}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl py-2.5 text-sm transition-colors"
-          >
+          <button onClick={onClose}
+            style={{ flex: 1, padding: '10px 0', borderRadius: 12, border: 'none', background: 'linear-gradient(to right, #4f46e5, #7c3aed)', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
             Done
           </button>
         </div>
@@ -191,116 +137,113 @@ function ClientListPage() {
   useEffect(() => {
     setLoading(true)
     setError(null)
-
-    fetch(`${AUTH_SERVICE}/api/clients/${industry}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((r) => {
-        if (!r.ok) throw new Error(`Server error: ${r.status}`)
-        return r.json()
-      })
+    fetch(`${AUTH_SERVICE}/api/clients/${industry}`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => { if (!r.ok) throw new Error(`Server error: ${r.status}`); return r.json() })
       .then((data) => { setClients(data.clients || []); setLoading(false) })
       .catch((err) => { setError(err.message); setLoading(false) })
   }, [industry, token])
 
   const handleSelect = (client) => {
     const baseUrl = dashboardUrls[industry]
-    if (baseUrl && token) {
+    if (baseUrl && token)
       window.location.href = `${baseUrl}?token=${encodeURIComponent(token)}&client_id=${client.id}`
-    }
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
-      <div className="max-w-2xl mx-auto">
+    <div style={{ minHeight: '100vh', background: '#0f0e17', padding: '32px 16px', position: 'relative', overflow: 'hidden' }}>
+
+      {/* bg glow */}
+      <div style={{ position: 'absolute', top: 0, left: '30%', width: 400, height: 300, background: 'radial-gradient(ellipse, rgba(99,102,241,0.1), transparent 70%)', pointerEvents: 'none' }} />
+
+      <div style={{ position: 'relative', zIndex: 1, maxWidth: 600, margin: '0 auto' }}>
 
         {/* Header */}
-        <div className="mb-8">
+        <div style={{ marginBottom: 32 }}>
           <button
             onClick={() => navigate('/login')}
-            className="text-sm text-gray-400 hover:text-gray-600 mb-4 inline-flex items-center gap-1 transition-colors"
+            style={{ background: 'none', border: 'none', color: '#4b5563', cursor: 'pointer', fontSize: 13, marginBottom: 16, display: 'inline-flex', alignItems: 'center', gap: 4, padding: 0 }}
+            onMouseEnter={e => e.currentTarget.style.color = '#a5b4fc'}
+            onMouseLeave={e => e.currentTarget.style.color = '#4b5563'}
           >
             ← Back
           </button>
-          <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">{meta.icon}</span>
-              <h1 className="text-2xl font-bold text-gray-900">{meta.label} Clients</h1>
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: 28 }}>{meta.icon}</span>
+              <h1 style={{ fontSize: 'clamp(1.3rem, 3vw, 1.6rem)', fontWeight: 800, color: '#fff' }}>{meta.label} Clients</h1>
             </div>
             <button
               onClick={() => setShowAddUser(true)}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 10, border: 'none', background: 'linear-gradient(to right, #4f46e5, #7c3aed)', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 14px rgba(99,102,241,0.35)' }}
             >
               + Add User
             </button>
           </div>
-          <p className="text-sm text-gray-500">Select a client to open their dashboard</p>
+          <p style={{ fontSize: 13, color: '#4b5563' }}>Select a client to open their dashboard</p>
         </div>
 
-        {/* Loading skeletons */}
+        {/* Skeletons */}
         {loading && (
-          <div className="flex flex-col gap-3">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-20 bg-white border border-gray-100 rounded-2xl animate-pulse" />
+              <div key={i} style={{ height: 76, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, animation: 'pulse 1.5s infinite' }} />
             ))}
           </div>
         )}
 
         {/* Error */}
         {error && (
-          <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-sm text-red-600">
+          <div style={{ padding: 16, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 14, fontSize: 13, color: '#f87171' }}>
             Failed to load clients: {error}
           </div>
         )}
 
         {/* Client cards */}
         {!loading && !error && (
-          <div className="flex flex-col gap-3">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {clients.length === 0 ? (
-              <p className="text-center text-sm text-gray-400 py-8">No clients found for this industry.</p>
+              <p style={{ textAlign: 'center', fontSize: 13, color: '#374151', padding: '40px 0' }}>No clients found for this industry.</p>
             ) : (
               clients.map((client) => (
                 <button
                   key={client.id}
                   onClick={() => handleSelect(client)}
-                  className="flex items-center gap-4 p-5 bg-white border border-gray-100 hover:border-blue-400 rounded-2xl text-left shadow-sm hover:shadow-md transition-all duration-200 group"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px',
+                    background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 16, textAlign: 'left', cursor: 'pointer', width: '100%', transition: 'all 0.18s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(99,102,241,0.08)'; e.currentTarget.style.borderColor = 'rgba(99,102,241,0.35)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.transform = 'translateY(0)' }}
                 >
-                  <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-lg font-bold text-blue-600 flex-shrink-0">
+                  <div style={{ width: 42, height: 42, borderRadius: 12, background: 'rgba(99,102,241,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, fontWeight: 800, color: '#818cf8', flexShrink: 0 }}>
                     {client.name[0]}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900 group-hover:text-blue-700">{client.name}</p>
-                    <p className="text-xs text-gray-400">{client.type} · {client.location}</p>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontWeight: 600, color: '#f1f5f9', fontSize: 14, marginBottom: 2 }}>{client.name}</p>
+                    <p style={{ fontSize: 12, color: '#4b5563' }}>{client.type} · {client.location}</p>
                   </div>
-                  <span className="text-gray-300 group-hover:text-blue-500 text-xl flex-shrink-0">→</span>
+                  <span style={{ color: '#374151', fontSize: 18, flexShrink: 0 }}>→</span>
                 </button>
               ))
             )}
           </div>
         )}
 
-        <p className="text-center text-xs text-gray-300 mt-8">
-          Logged in as admin · <span className="text-gray-400">{user?.email}</span>
+        <p style={{ textAlign: 'center', fontSize: 11, color: '#1f2937', marginTop: 32 }}>
+          Logged in as admin · <span style={{ color: '#374151' }}>{user?.email}</span>
         </p>
       </div>
 
-      {/* Modals */}
       {showAddUser && (
-        <AddUserModal
-          industry={industry}
-          clients={clients}
-          token={token}
+        <AddUserModal industry={industry} clients={clients} token={token}
           onClose={() => setShowAddUser(false)}
           onSuccess={(u) => { setShowAddUser(false); setNewUser(u) }}
         />
       )}
 
-      {newUser && (
-        <CredentialsModal
-          user={newUser}
-          onClose={() => setNewUser(null)}
-        />
-      )}
+      {newUser && <CredentialsModal user={newUser} onClose={() => setNewUser(null)} />}
     </div>
   )
 }

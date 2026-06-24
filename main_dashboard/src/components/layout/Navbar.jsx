@@ -31,11 +31,12 @@ export default function Navbar() {
           padding: '8px 20px',
           borderRadius: 8,
           border: 'none',
-          background: '#2563eb',
+          background: 'linear-gradient(to right, #4f46e5, #7c3aed)',
           color: '#fff',
           fontSize: 14,
           fontWeight: 600,
           cursor: 'pointer',
+          boxShadow: '0 4px 16px rgba(99,102,241,0.35)',
         }}
       >
         Login
